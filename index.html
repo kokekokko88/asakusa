@@ -1248,20 +1248,55 @@ function loadFromLocalStorage() {
   } catch(e) { return false; }
 }
 
-function loadFromFirebase() {
+function loadFromFirebase(callback) {
+  updateIndicator('☁️ 同期中...', 'rgba(52,152,219,0.9)');
   fetch(DB_PATH)
   .then(function(r){return r.json();})
-  .then(function(data){
-    if(!data||data.status==='empty') return;
-    if(data.salesEntries && data.salesEntries.length>0) salesEntries=data.salesEntries;
-    if(data.purchaseEntries && data.purchaseEntries.length>0) purchaseEntries=data.purchaseEntries;
-    if(data.laborEntries && data.laborEntries.length>0) laborEntries=data.laborEntries;
-    if(data.fixedData && Object.keys(data.fixedData).length>0) fixedData=data.fixedData;
-    if(data.staffList && data.staffList.length>0) staffList=data.staffList;
-    updateIndicator('☁️ クラウドから読込完了');
+  .then(function(fbData){
+    if(!fbData || fbData.status==='empty') {
+      updateIndicator('☁️ クラウド空 - ローカルを使用');
+      if(callback) callback();
+      return;
+    }
+    // ローカルのsavedAtとFirebaseのsavedAtを比較して新しい方を使う
+    var lsRaw = null;
+    try { lsRaw = localStorage.getItem(LS_KEY); } catch(e) {}
+    var localData = null;
+    if(lsRaw) { try { localData = JSON.parse(lsRaw); } catch(e) {} }
+    
+    var fbTime = fbData.savedAt ? new Date(fbData.savedAt).getTime() : 0;
+    var lsTime = (localData && localData.savedAt) ? new Date(localData.savedAt).getTime() : 0;
+    
+    // Firebaseの方が新しいか、ローカルがなければFirebaseを使用
+    if(fbTime >= lsTime) {
+      if(fbData.salesEntries) salesEntries=fbData.salesEntries;
+      if(fbData.purchaseEntries) purchaseEntries=fbData.purchaseEntries;
+      if(fbData.laborEntries) laborEntries=fbData.laborEntries;
+      if(fbData.fixedData) fixedData=fbData.fixedData;
+      if(fbData.staffList && fbData.staffList.length>0) staffList=fbData.staffList;
+      // ローカルも最新で上書き
+      try { localStorage.setItem(LS_KEY, JSON.stringify(fbData)); } catch(e) {}
+      updateIndicator('☁️ クラウドから同期完了');
+    } else {
+      // ローカルの方が新しい → ローカルをFirebaseに保存
+      if(localData.salesEntries) salesEntries=localData.salesEntries;
+      if(localData.purchaseEntries) purchaseEntries=localData.purchaseEntries;
+      if(localData.laborEntries) laborEntries=localData.laborEntries;
+      if(localData.fixedData) fixedData=localData.fixedData;
+      if(localData.staffList && localData.staffList.length>0) staffList=localData.staffList;
+      updateIndicator('💾 ローカルが最新 - クラウドに同期中...');
+      saveToStorage();
+    }
     renderDashboard(); renderSCal(); renderPCal(); renderLCal(); renderFcCal();
+    if(callback) callback();
   })
-  .catch(function(){});
+  .catch(function(e){
+    // Firebase失敗時はローカルを使う
+    updateIndicator('⚠️ オフライン - ローカル使用中', 'rgba(231,76,60,0.9)');
+    loadFromLocalStorage();
+    renderDashboard(); renderSCal(); renderPCal(); renderLCal(); renderFcCal();
+    if(callback) callback();
+  });
 }
 
 function clearStorage() {
@@ -1297,6 +1332,12 @@ function init(){
     dashY=parseInt(last);dashM=parseInt(last.slice(5,7))-1;
   }
   renderDashboard();
+  // 起動時にFirebaseから最新データを同期
+  loadFromFirebase();
+  // 30秒ごとに自動同期（複数端末対応）
+  setInterval(function(){
+    loadFromFirebase();
+  }, 30000);
 }
 </script>
 </body>
