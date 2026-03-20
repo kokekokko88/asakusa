@@ -1037,11 +1037,11 @@ function saveSalesEntry(){
   const idx=salesEntries.findIndex(e=>e.date===dt);
   const entry={date:dt,cash,credit,paypay,qr,customers,groups};
   if(idx>=0) salesEntries[idx]=entry; else salesEntries.push(entry);
-  renderSCal();updateSDayInfo();updateSList();renderDashboard();showToast();
+  renderSCal();updateSDayInfo();updateSList();renderDashboard();saveToStorage();saveToStorage();showToast();
 }
 function removeSalesEntry(dt){
   salesEntries=salesEntries.filter(e=>e.date!==dt);
-  renderSCal();updateSDayInfo();updateSList();renderDashboard();
+  renderSCal();updateSDayInfo();updateSList();renderDashboard();saveToStorage();
 }
 function updateSList(){
   const key=mkey(sCalY,sCalM+1);
@@ -1085,9 +1085,9 @@ function addPurchaseEntry(){
   purchaseEntries.push({date:dt,supplier:sup,cat,amount:amt});
   document.getElementById('p-supplier').value='';
   document.getElementById('p-amount').value='';
-  renderPCal();updatePDayInfo();updatePList();renderDashboard();showToast();
+  renderPCal();updatePDayInfo();updatePList();renderDashboard();saveToStorage();saveToStorage();showToast();
 }
-function removePurchaseEntry(idx){purchaseEntries.splice(idx,1);renderPCal();updatePDayInfo();updatePList();renderDashboard();}
+function removePurchaseEntry(idx){purchaseEntries.splice(idx,1);renderPCal();updatePDayInfo();updatePList();renderDashboard();saveToStorage();}
 function updatePList(){
   const key=mkey(pCalY,pCalM+1);
   document.getElementById('p-list-month').textContent=(pCalM+1)+'月';
@@ -1157,9 +1157,9 @@ function addLaborEntry(){
   document.getElementById('l-staff').value='';
   document.getElementById('l-amount').value='';
   document.querySelectorAll('.staff-btn').forEach(b=>b.classList.remove('active'));
-  renderLCal();updateLDayInfo();updateLList();renderDashboard();showToast();
+  renderLCal();updateLDayInfo();updateLList();renderDashboard();saveToStorage();saveToStorage();showToast();
 }
-function removeLaborEntry(idx){laborEntries.splice(idx,1);renderLCal();updateLDayInfo();updateLList();renderDashboard();}
+function removeLaborEntry(idx){laborEntries.splice(idx,1);renderLCal();updateLDayInfo();updateLList();renderDashboard();saveToStorage();}
 function updateLList(){
   const key=mkey(lCalY,lCalM+1);
   document.getElementById('l-list-month').textContent=(lCalM+1)+'月';
@@ -1195,7 +1195,7 @@ function saveFcEntry(){
   const key=mkey(fcY,fcM+1);
   fixedData[key]={};
   FC_KEYS.forEach(k=>{fixedData[key][k]=+document.getElementById('fc-'+k).value||0;});
-  renderDashboard();showToast();
+  renderDashboard();saveToStorage();showToast();
 }
 function copyPrevMonthFixed(){
   let pM=fcM-1,pY=fcY;
