@@ -1781,7 +1781,13 @@ function downloadPDF(){
   const fee=sEntries.reduce((a,e)=>a+calcFee(e),0);
   const gross=totalSales-totalPurchase-fee;
   const net=gross-totalLabor-fcTotal;
-  const salesRows=sEntries.sort((a,b)=>a.date.localeCompare(b.date)).map(e=>{
+  const totalDayNet=sEntries.reduce((a,e)=>{
+    const s=e.cash+e.credit+e.paypay+e.qr;
+    const p=pEntries.filter(x=>x.date===e.date).reduce((a,x)=>a+x.amount,0);
+    const l=lEntries.filter(x=>x.date===e.date).reduce((a,x)=>a+x.amount,0);
+    return a+(s-p-l);
+  },0);
+  const totalDayNetTd=totalDayNet>=0?`¥${totalDayNet.toLocaleString()}`:`⚠️ -¥${Math.abs(totalDayNet).toLocaleString()}`;((a,b)=>a.date.localeCompare(b.date)).map(e=>{
     const total=e.cash+e.credit+e.paypay+e.qr;
     const d=new Date(e.date);
     const purch=pEntries.filter(p=>p.date===e.date).reduce((a,p)=>a+p.amount,0);
@@ -1850,7 +1856,7 @@ function downloadPDF(){
       <td>¥${totalCredit.toLocaleString()}</td>
       <td>¥${totalPaypay.toLocaleString()}</td>
       <td>¥${totalQr.toLocaleString()}</td>
-      <td>${(()=>{const dn=sEntries.reduce((a,e)=>{const s=e.cash+e.credit+e.paypay+e.qr;const p=pEntries.filter(p=>p.date===e.date).reduce((a,p)=>a+p.amount,0);const l=lEntries.filter(l=>l.date===e.date).reduce((a,l)=>a+l.amount,0);return a+(s-p-l);},0);return dn>=0?'¥'+dn.toLocaleString():'⚠️ -¥'+Math.abs(dn).toLocaleString();})()}</td>
+      <td>${totalDayNetTd}</td>
     </tr>
     <tr style="background:#fff3f0;font-size:11px;color:#888;">
       <td style="text-align:center">決済手数料</td>
